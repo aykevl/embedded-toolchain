@@ -1,0 +1,6 @@
+[submodule "lib/llvm-project"]
+	path = lib/llvm-project
+	url = git@github.com:llvm/llvm-project.git
+[submodule "lib/picolibc"]
+	path = lib/picolibc
+	url = git@github.com:picolibc/picolibc.git
