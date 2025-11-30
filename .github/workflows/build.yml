@@ -1,0 +1,31 @@
+name: Build toolchain sysroots
+on: [push]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-all:
+    # When updating the Ubuntu version, the llvm-project submodule should
+    # probably also be updated.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - name: Install dependencies
+        run: |
+          # Note: libclang-dev is only needed to avoid an error while
+          # configuring Clang runtimes, this might be fixable but for now let's
+          # just install libclang-dev as a workaround.
+          sudo apt-get install --no-install-recommends -y \
+              clang \
+              lld \
+              libclang-dev \
+              meson
+      - name: Build toolchains
+        run: ./scripts/build-thumbv6m.sh
+      - name: Make release build
+        uses: actions/upload-artifact@v4
+        with:
+          name: thumbv6m
+          path: build/thumbv6m
