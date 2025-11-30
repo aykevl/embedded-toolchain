@@ -11,31 +11,6 @@ cd build/thumv6m
 
 SOURCE="$(realpath ../..)"
 
-# Create Clang configuration file
-# ===============================
-
-cat > clang.txt <<- EOM
-# Clang configuration file.
-# Use 'clang --config=path/to/clang.txt' to use this sysroot.
-
-# Select the right architecture/ABI etc.
---target=thumbv6m-unknown-none-eabi -fshort-enums
-
-# Don't use standard library files.
--nostdlib -nostdlibinc
-
-# Add libc++ to the include path.
--isystem <CFGDIR>/llvm/include/c++/v1
-
-# Add picolibc to the include path.
--isystem <CFGDIR>/picolibc
--isystem <CFGDIR>/../../lib/picolibc/newlib/libc/include
--isystem <CFGDIR>/../../lib/picolibc/newlib/libc/tinystdio
-
-EOM
-
-exit
-
 # Build picolibc
 # ==============
 #
@@ -105,3 +80,26 @@ cmake $SOURCE/lib/llvm-project/runtimes \
 echo
 echo "🔨 Building LLVM runtimes"
 ninja -C llvm
+
+# Create Clang configuration file
+# ===============================
+
+cat > clang.txt <<- EOM
+# Clang configuration file.
+# Use 'clang --config=path/to/clang.txt' to use this sysroot.
+
+# Select the right architecture/ABI etc.
+--target=thumbv6m-unknown-none-eabi -fshort-enums
+
+# Don't use standard library files.
+-nostdlib -nostdlibinc
+
+# Add libc++ to the include path.
+-isystem <CFGDIR>/llvm/include/c++/v1
+
+# Add picolibc to the include path.
+-isystem <CFGDIR>/picolibc
+-isystem <CFGDIR>/../../lib/picolibc/newlib/libc/include
+-isystem <CFGDIR>/../../lib/picolibc/newlib/libc/tinystdio
+
+EOM
