@@ -6,8 +6,8 @@
 
 set -e
 
-mkdir -p build/thumv6m
-cd build/thumv6m
+mkdir -p build/thumbv6m
+cd build/thumbv6m
 
 SOURCE="$(realpath ../..)"
 
