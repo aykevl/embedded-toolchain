@@ -42,11 +42,15 @@ c_link_args = ['--target=thumbv6m-unknown-none-eabi', '-fuse-ld=lld', '-nostdlib
 skip_sanity_check = true
 EOM
 
-meson setup --cross-file ./picolibc/cross.txt "$SOURCE/lib/picolibc" ./picolibc
+meson setup --cross-file ./picolibc/cross.txt --prefix="$(realpath ./picolibc)" "$SOURCE/lib/picolibc" ./picolibc/build
 
 echo
 echo "🔨 Compiling picolibc"
-meson compile -C picolibc
+ninja -C picolibc/build install
+
+echo
+echo "🔨 Removing picolibc build files"
+rm -r picolibc/build
 
 # Build LLVM bits
 # ===============
@@ -54,7 +58,7 @@ meson compile -C picolibc
 rm -rf llvm
 mkdir llvm
 
-LLVM_FLAGS="--target=thumbv6m-unknown-none-eabi -fshort-enums -nostdlib -nostdlibinc -isystem ../picolibc -isystem $SOURCE/lib/picolibc/newlib/libc/include -isystem $SOURCE/lib/picolibc/newlib/libc/tinystdio"
+LLVM_FLAGS="--target=thumbv6m-unknown-none-eabi -fshort-enums -nostdlib -nostdlibinc -isystem ../picolibc/include"
 
 echo
 echo "🔨 Configuring LLVM runtimes"
@@ -98,8 +102,6 @@ cat > clang.txt <<- EOM
 -isystem <CFGDIR>/llvm/include/c++/v1
 
 # Add picolibc to the include path.
--isystem <CFGDIR>/picolibc
--isystem <CFGDIR>/../../lib/picolibc/newlib/libc/include
--isystem <CFGDIR>/../../lib/picolibc/newlib/libc/tinystdio
+-isystem <CFGDIR>/picolibc/include
 
 EOM
