@@ -101,7 +101,8 @@ cat > clang.txt <<- EOM
 # Add libc++ to the include path.
 -isystem <CFGDIR>/llvm/include/c++/v1
 
-# Add picolibc to the include path.
+# Add picolibc.
 -isystem <CFGDIR>/picolibc/include
+-L<CFGDIR>/picolibc/lib $-lc
 
 EOM
