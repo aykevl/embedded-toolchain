@@ -58,7 +58,8 @@ rm -r picolibc/build
 rm -rf llvm
 mkdir llvm
 
-LLVM_FLAGS="--target=thumbv6m-unknown-none-eabi -fshort-enums -nostdlib -nostdlibinc -isystem ../picolibc/include"
+LLVM_TARGET=armv6m-none-eabi
+LLVM_FLAGS="-mthumb -fshort-enums -nostdlib -nostdlibinc -isystem ../picolibc/include"
 
 echo
 echo "🔨 Configuring LLVM runtimes"
@@ -66,11 +67,20 @@ cmake $SOURCE/lib/llvm-project/runtimes \
     -B llvm \
     -G Ninja \
     -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;compiler-rt" \
-    -DCMAKE_C_COMPILER=clang \
+    -DCMAKE_ASM_COMPILER_TARGET=$LLVM_TARGET \
+    -DCMAKE_ASM_FLAGS="$LLVM_FLAGS" \
     -DCMAKE_CXX_COMPILER=clang++ \
-    -DCMAKE_C_FLAGS="$LLVM_FLAGS" \
+    -DCMAKE_CXX_COMPILER_TARGET=$LLVM_TARGET \
     -DCMAKE_CXX_FLAGS="$LLVM_FLAGS" \
+    -DCMAKE_C_COMPILER=clang \
+    -DCMAKE_C_COMPILER_TARGET=$LLVM_TARGET \
+    -DCMAKE_C_FLAGS="$LLVM_FLAGS" \
+    -DCOMPILER_RT_BAREMETAL_BUILD=ON \
     -DCOMPILER_RT_BUILD_LIBFUZZER=OFF \
+    -DCOMPILER_RT_BUILD_PROFILE=OFF \
+    -DCOMPILER_RT_BUILD_SANITIZERS=OFF \
+    -DCOMPILER_RT_BUILD_XRAY=OFF \
+    -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
     -DLIBCXXABI_BAREMETAL=ON \
     -DLIBCXXABI_ENABLE_SHARED=OFF \
     -DLIBCXXABI_ENABLE_THREADS=OFF \
@@ -103,6 +113,12 @@ cat > clang.txt <<- EOM
 
 # Add picolibc.
 -isystem <CFGDIR>/picolibc/include
--L<CFGDIR>/picolibc/lib $-lc
+--sysroot=<CFGDIR>/picolibc \$-lc
+
+# Add compiler-rt library.
+\$<CFGDIR>/llvm/compiler-rt/lib/linux/libclang_rt.builtins-armv6m.a
+
+# Link using ld.lld
+\$-fuse-ld=lld
 
 EOM
