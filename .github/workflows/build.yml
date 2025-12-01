@@ -8,6 +8,10 @@ jobs:
     # When updating the Ubuntu version, the llvm-project submodule should
     # probably also be updated.
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        arch:
+          - thumbv6m
     steps:
       - uses: actions/checkout@v5
         with:
@@ -23,9 +27,9 @@ jobs:
               libclang-dev \
               meson
       - name: Build toolchains
-        run: ./scripts/build-thumbv6m.sh
+        run: ./scripts/build-${{ matrix.arch }}.sh
       - name: Make release build
         uses: actions/upload-artifact@v4
         with:
-          name: thumbv6m
-          path: build/thumbv6m
+          name: ${{ matrix.arch }}
+          path: build/${{ matrix.arch }}
