@@ -17,10 +17,10 @@ jobs:
         with:
           submodules: true
       - name: Install dependencies
+        # Note: libclang-dev is only needed to avoid an error while configuring
+        # Clang runtimes, this might be fixable but for now let's just install
+        # libclang-dev as a workaround.
         run: |
-          # Note: libclang-dev is only needed to avoid an error while
-          # configuring Clang runtimes, this might be fixable but for now let's
-          # just install libclang-dev as a workaround.
           sudo apt-get install --no-install-recommends -y \
               clang \
               lld \
