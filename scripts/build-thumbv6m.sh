@@ -119,6 +119,6 @@ cat > clang.txt <<- EOM
 \$<CFGDIR>/llvm/compiler-rt/lib/linux/libclang_rt.builtins-armv6m.a
 
 # Link using ld.lld
-\$-fuse-ld=lld
+-fuse-ld=lld
 
 EOM
