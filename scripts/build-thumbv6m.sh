@@ -119,6 +119,8 @@ cat > clang.txt <<- EOM
 \$<CFGDIR>/llvm/compiler-rt/lib/linux/libclang_rt.builtins-armv6m.a
 
 # Link using ld.lld
+# Note that we can't use the dollar prefix here, see:
+# https://github.com/llvm/llvm-project/issues/170847
 -fuse-ld=lld
 
 EOM
