@@ -2,6 +2,10 @@
 
 Work-in-progress embedded toolchain, so you can easily compile for a baremetal system using a system Clang.
 
+Host requirements:
+
+  * Clang 20+ and ld.lld installed. (Any Clang/LLD should work).
+
 Goals:
 
   * Provide a sysroot for compiling to various embedded platforms.
