@@ -56,15 +56,15 @@ rm -r picolibc/build
 # ===============
 
 rm -rf llvm
-mkdir llvm
+mkdir -p llvm/build
 
 LLVM_TARGET=armv6m-none-eabi
-LLVM_FLAGS="-mthumb -fshort-enums -nostdlib -nostdlibinc -isystem ../picolibc/include"
+LLVM_FLAGS="-mthumb -fshort-enums -nostdlib -nostdlibinc -isystem ../../picolibc/include"
 
 echo
 echo "🔨 Configuring LLVM runtimes"
 cmake $SOURCE/lib/llvm-project/runtimes \
-    -B llvm \
+    -B llvm/build \
     -G Ninja \
     -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;compiler-rt" \
     -DCMAKE_ASM_COMPILER_TARGET=$LLVM_TARGET \
@@ -75,6 +75,7 @@ cmake $SOURCE/lib/llvm-project/runtimes \
     -DCMAKE_C_COMPILER=clang \
     -DCMAKE_C_COMPILER_TARGET=$LLVM_TARGET \
     -DCMAKE_C_FLAGS="$LLVM_FLAGS" \
+    -DCMAKE_INSTALL_PREFIX=llvm \
     -DCOMPILER_RT_BAREMETAL_BUILD=ON \
     -DCOMPILER_RT_BUILD_LIBFUZZER=OFF \
     -DCOMPILER_RT_BUILD_PROFILE=OFF \
@@ -93,7 +94,11 @@ cmake $SOURCE/lib/llvm-project/runtimes \
 
 echo
 echo "🔨 Building LLVM runtimes"
-ninja -C llvm
+ninja -C llvm/build install
+
+echo
+echo "🔨 Removing LLVM build files"
+rm -r llvm/build
 
 # Create Clang configuration file
 # ===============================
@@ -116,7 +121,7 @@ cat > clang.txt <<- EOM
 --sysroot=<CFGDIR>/picolibc \$-lc
 
 # Add compiler-rt library.
-\$<CFGDIR>/llvm/compiler-rt/lib/linux/libclang_rt.builtins-armv6m.a
+\$<CFGDIR>/llvm/lib/linux/libclang_rt.builtins-armv6m.a
 
 # Link using ld.lld
 # Note that we can't use the dollar prefix here, see:
