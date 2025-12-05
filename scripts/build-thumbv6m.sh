@@ -85,6 +85,7 @@ cmake $SOURCE/lib/llvm-project/runtimes \
     -DLIBCXXABI_BAREMETAL=ON \
     -DLIBCXXABI_ENABLE_SHARED=OFF \
     -DLIBCXXABI_ENABLE_THREADS=OFF \
+    -DLIBCXXABI_ENABLE_EXCEPTIONS=OFF \
     -DLIBCXXABI_USE_LLVM_UNWINDER=OFF \
     -DLIBCXX_ABI_UNSTABLE=ON \
     -DLIBCXX_ENABLE_FILESYSTEM=OFF \
@@ -100,12 +101,13 @@ echo
 echo "🔨 Removing LLVM build files"
 rm -r llvm/build
 
-# Create Clang configuration file
-# ===============================
+# Create Clang configuration files
+# ================================
 
-cat > clang.txt <<- EOM
+# C configuration file.
+cat > clang.cfg <<- EOM
 # Clang configuration file.
-# Use 'clang --config=path/to/clang.txt' to use this sysroot.
+# Use 'clang --config=path/to/clang.cfg' to use this sysroot.
 
 # Select the right architecture/ABI etc.
 --target=thumbv6m-unknown-none-eabi -fshort-enums
@@ -113,8 +115,40 @@ cat > clang.txt <<- EOM
 # Don't use standard library files.
 -nostdlib -nostdlibinc
 
-# Add libc++ to the include path.
+# Add picolibc.
+-isystem <CFGDIR>/picolibc/include
+--sysroot=<CFGDIR>/picolibc \$-lc
+
+# Add compiler-rt library.
+\$<CFGDIR>/llvm/lib/linux/libclang_rt.builtins-armv6m.a
+
+# Link using ld.lld
+# Note that we can't use the dollar prefix here, see:
+# https://github.com/llvm/llvm-project/issues/170847
+-fuse-ld=lld
+
+EOM
+
+# C++ configuration file (almost identical, the only difference is the C++
+# libraries).
+cat > clang++.cfg <<- EOM
+# Clang C++ configuration file.
+# Use 'clang++ --config=path/to/clang++.cfg' to use this sysroot.
+
+# Select the right architecture/ABI etc.
+--target=thumbv6m-unknown-none-eabi -fshort-enums
+
+# Don't use standard library files.
+-nostdlib -nostdlibinc
+
+# Don't use exception handling.
+# At the moment, we don't support libunwind.
+-fno-exceptions
+
+# Add libc++.
 -isystem <CFGDIR>/llvm/include/c++/v1
+-L<CFGDIR>/llvm/lib
+\$-lc++ \$-lc++abi
 
 # Add picolibc.
 -isystem <CFGDIR>/picolibc/include

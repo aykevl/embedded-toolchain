@@ -24,6 +24,6 @@ Non-goals:
 
 Using this sysroot is very simple. Once you've downloaded one of the sysroots and extracted it, all you need to do is to pass the right `--config` parameter. So for example, assuming you've put a release binary in sysroots/thumbv6m, you can use a command like this:
 
-    clang --config=sysroots/thumbv6m/clang.txt -c -o file.o file.c -O2
+    clang --config=sysroots/thumbv6m/clang.cfg -c -o file.o file.c -O2
 
 This sets up the target, the include paths, etc. so the native Clang works like a cross compilation toolchain.
