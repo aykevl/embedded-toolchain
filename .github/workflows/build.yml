@@ -33,3 +33,67 @@ jobs:
         with:
           name: ${{ matrix.arch }}
           path: build/${{ matrix.arch }}
+  test-build-linux:
+    strategy:
+      matrix:
+        container:
+          # More toolchains can be added in the future, if needed.
+          - alpine:3.23 # Clang 21
+          - alpine:3.22 # Clang 20
+    needs: build-all
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ matrix.container }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install dependencies
+        run: apk add clang lld llvm
+      # Note: more architectures should be added by just downloading the
+      # artifacts one by one. No need to run them all separately in different
+      # jobs just for the matrix to work.
+      - name: Download release build
+        uses: actions/download-artifact@v5
+        with:
+          name: thumbv6m
+          path: build/thumbv6m
+      - name: Run tests
+        run: ./test/test.sh
+  test-build-macos:
+    needs: build-all
+    # Use MacOS 26 since it has Clang 20 already installed.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download release build
+        uses: actions/download-artifact@v5
+        with:
+          name: thumbv6m
+          path: build/thumbv6m
+      # Apparently LLD isn't installed by default.
+      - name: Install dependencies
+        run: |
+          HOMEBREW_NO_AUTO_UPDATE=1 brew install lld@20
+      # We need to add Homebrew Clang to $PATH, since the default Clang (as of
+      # MacOS 26) appears to be Apple Clang based on LLVM 17 which is rather
+      # old.
+      # In the future (once Apple updates to a recent enough Clang version), we
+      # might be able to test Apple Clang too, not just Homebrew Clang.
+      - name: Add Clang/LLD to $PATH
+        run: |
+          echo "$(brew --prefix llvm@20)/bin/" >> $GITHUB_PATH
+          echo "$(brew --prefix lld@20)/bin/" >> $GITHUB_PATH
+      - name: Run tests
+        run: ./test/test.sh
+  test-build-windows:
+    needs: build-all
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download release build
+        uses: actions/download-artifact@v5
+        with:
+          name: thumbv6m
+          path: build/thumbv6m
+      - name: Run tests
+        shell: bash
+        run: ./test/test.sh
