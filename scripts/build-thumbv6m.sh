@@ -6,6 +6,7 @@
 
 set -e
 
+rm -rf build/thumbv6m
 mkdir -p build/thumbv6m
 cd build/thumbv6m
 
@@ -17,13 +18,12 @@ SOURCE="$(realpath ../..)"
 # This must be done before the LLVM runtimes are built, since the runtimes
 # depend on a libc.
 
-rm -rf picolibc
-mkdir -p picolibc/build
+mkdir -p build/picolibc
 
 echo "🔨 Configuring picolibc"
 
 # Create a cross compilation file for Meson.
-cat > picolibc/build/cross.txt <<- EOM
+cat > build/picolibc/cross.txt <<- EOM
 [binaries]
 c = 'clang'
 strip = 'llvm-strip'
@@ -42,29 +42,24 @@ c_link_args = ['--target=thumbv6m-unknown-none-eabi', '-fuse-ld=lld', '-nostdlib
 skip_sanity_check = true
 EOM
 
-meson setup --cross-file ./picolibc/build/cross.txt --prefix="$(realpath ./picolibc)" "$SOURCE/lib/picolibc" ./picolibc/build
+meson setup --cross-file ./build/picolibc/cross.txt --prefix="$(realpath .)" "$SOURCE/lib/picolibc" ./build/picolibc
 
 echo
 echo "🔨 Compiling picolibc"
-ninja -C picolibc/build install
-
-echo
-echo "🔨 Removing picolibc build files"
-rm -r picolibc/build
+ninja -C build/picolibc install
 
 # Build LLVM bits
 # ===============
 
-rm -rf llvm
-mkdir -p llvm/build
+mkdir -p build/llvm
 
 LLVM_TARGET=armv6m-none-eabi
-LLVM_FLAGS="-mthumb -fshort-enums -nostdlib -nostdlibinc -isystem ../../picolibc/include"
+LLVM_FLAGS="-mthumb -fshort-enums -nostdlib -nostdlibinc -isystem ../../include"
 
 echo
 echo "🔨 Configuring LLVM runtimes"
 cmake $SOURCE/lib/llvm-project/runtimes \
-    -B llvm/build \
+    -B build/llvm \
     -G Ninja \
     -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;compiler-rt" \
     -DCMAKE_ASM_COMPILER_TARGET=$LLVM_TARGET \
@@ -75,7 +70,7 @@ cmake $SOURCE/lib/llvm-project/runtimes \
     -DCMAKE_C_COMPILER=clang \
     -DCMAKE_C_COMPILER_TARGET=$LLVM_TARGET \
     -DCMAKE_C_FLAGS="$LLVM_FLAGS" \
-    -DCMAKE_INSTALL_PREFIX=llvm \
+    -DCMAKE_INSTALL_PREFIX=. \
     -DCOMPILER_RT_BAREMETAL_BUILD=ON \
     -DCOMPILER_RT_BUILD_LIBFUZZER=OFF \
     -DCOMPILER_RT_BUILD_PROFILE=OFF \
@@ -95,11 +90,14 @@ cmake $SOURCE/lib/llvm-project/runtimes \
 
 echo
 echo "🔨 Building LLVM runtimes"
-ninja -C llvm/build install
+ninja -C build/llvm install
+
+# Cleanup
+# =======
 
 echo
-echo "🔨 Removing LLVM build files"
-rm -r llvm/build
+echo "🔨 Removing build files"
+rm -r build
 
 # Create Clang configuration files
 # ================================
@@ -115,12 +113,12 @@ cat > clang.cfg <<- EOM
 # Don't use standard library files.
 -nostdlib -nostdlibinc
 
-# Add picolibc.
--isystem <CFGDIR>/picolibc/include
---sysroot=<CFGDIR>/picolibc \$-lc
+# Use the right sysroot.
+-isystem <CFGDIR>/include
+--sysroot=<CFGDIR> \$-lc
 
 # Add compiler-rt library.
-\$<CFGDIR>/llvm/lib/linux/libclang_rt.builtins-armv6m.a
+\$<CFGDIR>/lib/linux/libclang_rt.builtins-armv6m.a
 
 # Link using ld.lld
 # Note that we can't use the dollar prefix here, see:
@@ -146,16 +144,15 @@ cat > clang++.cfg <<- EOM
 -fno-exceptions
 
 # Add libc++.
--isystem <CFGDIR>/llvm/include/c++/v1
--L<CFGDIR>/llvm/lib
+-isystem <CFGDIR>/include/c++/v1
 \$-lc++ \$-lc++abi
 
-# Add picolibc.
--isystem <CFGDIR>/picolibc/include
---sysroot=<CFGDIR>/picolibc \$-lc
+# Use the right sysroot.
+-isystem <CFGDIR>/include
+--sysroot=<CFGDIR> \$-lc
 
 # Add compiler-rt library.
-\$<CFGDIR>/llvm/lib/linux/libclang_rt.builtins-armv6m.a
+\$<CFGDIR>/lib/linux/libclang_rt.builtins-armv6m.a
 
 # Link using ld.lld
 # Note that we can't use the dollar prefix here, see:
