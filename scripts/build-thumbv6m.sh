@@ -18,12 +18,12 @@ SOURCE="$(realpath ../..)"
 # depend on a libc.
 
 rm -rf picolibc
-mkdir picolibc
+mkdir -p picolibc/build
 
 echo "🔨 Configuring picolibc"
 
 # Create a cross compilation file for Meson.
-cat > picolibc/cross.txt <<- EOM
+cat > picolibc/build/cross.txt <<- EOM
 [binaries]
 c = 'clang'
 strip = 'llvm-strip'
@@ -42,7 +42,7 @@ c_link_args = ['--target=thumbv6m-unknown-none-eabi', '-fuse-ld=lld', '-nostdlib
 skip_sanity_check = true
 EOM
 
-meson setup --cross-file ./picolibc/cross.txt --prefix="$(realpath ./picolibc)" "$SOURCE/lib/picolibc" ./picolibc/build
+meson setup --cross-file ./picolibc/build/cross.txt --prefix="$(realpath ./picolibc)" "$SOURCE/lib/picolibc" ./picolibc/build
 
 echo
 echo "🔨 Compiling picolibc"
